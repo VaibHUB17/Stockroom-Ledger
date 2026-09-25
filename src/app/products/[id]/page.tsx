@@ -229,6 +229,7 @@ export default function ProductDetailPage({ params }: PageProps) {
                       alt={product.title}
                       fill
                       priority
+                      unoptimized
                       sizes="(max-width: 1024px) 100vw, 50vw"
                       className="object-contain p-4"
                     />
@@ -257,6 +258,7 @@ export default function ProductDetailPage({ params }: PageProps) {
                           src={img}
                           alt=""
                           fill
+                          unoptimized
                           sizes="64px"
                           className="object-cover"
                         />

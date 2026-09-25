@@ -51,6 +51,7 @@ export function ProductTable({
                         src={product.thumbnail}
                         alt=""
                         fill
+                        unoptimized
                         sizes="48px"
                         className="object-cover"
                       />

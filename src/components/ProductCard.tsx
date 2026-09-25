@@ -37,6 +37,7 @@ export function ProductCardList({
                   src={product.thumbnail}
                   alt=""
                   fill
+                  unoptimized
                   sizes="64px"
                   className="object-cover"
                 />
