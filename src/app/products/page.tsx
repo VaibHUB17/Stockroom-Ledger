@@ -22,11 +22,41 @@ import {
   generateLocalId,
   hasLocalChanges,
 } from "../../lib/overlay";
+import { getToken } from "../../lib/auth-storage";
 import { Category, FilterParams, Product } from "../../lib/types";
 
 function ProductListContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Client-side authentication guard and bfcache back-navigation listener
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = getToken();
+      if (!token) {
+        setIsAuthenticated(false);
+        const from = window.location.pathname + window.location.search;
+        window.location.replace(`/login?from=${encodeURIComponent(from)}`);
+        return false;
+      }
+      setIsAuthenticated(true);
+      return true;
+    };
+
+    checkAuth();
+
+    // Re-check when restored from browser back/forward cache (bfcache)
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted || !getToken()) {
+        checkAuth();
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
 
   // URL is the single source of truth: parse and sanitise parameters
   const filters: FilterParams = useMemo(
@@ -131,6 +161,10 @@ function ProductListContent() {
   };
 
   const currentQuery = buildQueryString(filters);
+  if (!isAuthenticated) {
+    return <TableSkeletonRows count={filters.limit === 10 ? 8 : 12} />;
+  }
+
   const showNotice = hasLocalChanges(overlay);
 
   return (

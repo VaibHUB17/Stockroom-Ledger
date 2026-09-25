@@ -8,6 +8,7 @@ import { Navbar } from "../../../components/Navbar";
 import { IconArrowLeft, IconStar } from "../../../components/icons";
 import { StockIndicator } from "../../../components/StockIndicator";
 import { getProductById } from "../../../lib/api/products";
+import { getToken } from "../../../lib/auth-storage";
 import { getOverlay, applyOverlayToSingle } from "../../../lib/overlay";
 import { Product, AppError } from "../../../lib/types";
 
@@ -19,6 +20,34 @@ export default function ProductDetailPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const idStr = resolvedParams.id;
   const searchParams = useSearchParams();
+
+  // Client-side authentication guard and bfcache back-navigation listener
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = getToken();
+      if (!token) {
+        setIsAuthenticated(false);
+        const from = window.location.pathname + window.location.search;
+        window.location.replace(`/login?from=${encodeURIComponent(from)}`);
+        return false;
+      }
+      setIsAuthenticated(true);
+      return true;
+    };
+
+    checkAuth();
+
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted || !getToken()) {
+        checkAuth();
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [activeImage, setActiveImage] = useState<string>("");
@@ -32,6 +61,8 @@ export default function ProductDetailPage({ params }: PageProps) {
   useEffect(() => {
     let isMounted = true;
     const numericId = parseInt(idStr, 10);
+
+    if (!getToken()) return;
 
     if (isNaN(numericId) || numericId <= 0) {
       setNotFoundState(true);
@@ -167,7 +198,7 @@ export default function ProductDetailPage({ params }: PageProps) {
           </Link>
         </div>
 
-        {loading || !product ? (
+        {loading || !product || !isAuthenticated ? (
           /* Loading Skeleton for Detail Page */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-[var(--surface)] p-6 rounded border border-[var(--hairline)] animate-pulse">
             <div className="space-y-4">

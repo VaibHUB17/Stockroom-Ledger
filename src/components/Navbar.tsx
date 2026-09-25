@@ -2,13 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { getUser, clearSession } from "../lib/auth-storage";
 import { AuthUser } from "../lib/types";
 import { IconLogout } from "./icons";
 
 export function Navbar() {
-  const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
@@ -17,7 +15,7 @@ export function Navbar() {
 
   const handleLogout = () => {
     clearSession();
-    router.push("/login");
+    window.location.replace("/login");
   };
 
   return (
