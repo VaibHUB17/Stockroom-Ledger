@@ -21,14 +21,16 @@ export function useProductList(filters: FilterParams): UseProductListResult {
   const [overlay, setOverlay] = useState<OverlayData>(getOverlay());
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Store raw server-fetched products so syncOverlay never compounds over previous overlays
+  const rawProductsRef = useRef<Product[]>([]);
   // Keep track of the active request controller to abort on filter changes
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const syncOverlay = useCallback(() => {
     const currentOverlay = getOverlay();
     setOverlay(currentOverlay);
-    setProducts((prev) =>
-      applyOverlay(prev, currentOverlay, {
+    setProducts(
+      applyOverlay(rawProductsRef.current, currentOverlay, {
         q: filters.q,
         category: filters.category,
         page: filters.page,
@@ -85,6 +87,7 @@ export function useProductList(filters: FilterParams): UseProductListResult {
           });
         }
 
+        rawProductsRef.current = response.products;
         const currentOverlay = getOverlay();
         setOverlay(currentOverlay);
 

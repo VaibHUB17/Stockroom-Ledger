@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Product } from "../lib/types";
 import { IconStar, IconEdit, IconTrash } from "./icons";
 import { StockIndicator } from "./StockIndicator";
+import { ProductImage } from "./ProductImage";
 
 interface ProductCardListProps {
   products: Product[];
@@ -32,20 +32,13 @@ export function ProductCardList({
               href={detailHref}
               className="w-16 h-16 relative flex-shrink-0 rounded-md overflow-hidden bg-[var(--bg)] border border-[var(--hairline)]"
             >
-              {product.thumbnail ? (
-                <Image
-                  src={product.thumbnail}
-                  alt=""
-                  fill
-                  unoptimized
-                  sizes="64px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[var(--muted-ink)] text-xs font-mono">
-                  N/A
-                </div>
-              )}
+              <ProductImage
+                src={product.thumbnail}
+                alt={product.title}
+                fill
+                sizes="64px"
+                className="object-cover"
+              />
             </Link>
 
             {/* Content Details */}

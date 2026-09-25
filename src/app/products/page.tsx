@@ -14,7 +14,7 @@ import { LocalNotice } from "../../components/LocalNotice";
 import { useProductList } from "../../hooks/useProductList";
 import { parseUrlParams, buildQueryString, calculateMaxPage } from "../../lib/url-state";
 import { getCategories } from "../../lib/api/categories";
-import { addProduct, updateProduct, deleteProduct, ProductInput } from "../../lib/api/products";
+import { addProduct, updateProduct, deleteProduct, ProductInput, isLocalId } from "../../lib/api/products";
 import {
   recordLocalCreate,
   recordLocalUpdate,
@@ -114,9 +114,9 @@ function ProductListContent() {
   const handleFormSubmit = async (data: ProductInput, id?: number) => {
     try {
       if (id !== undefined) {
-        // Real API call (mocked by server)
-        await updateProduct(id, data);
-        // Persist to local overlay
+        if (!isLocalId(id)) {
+          await updateProduct(id, data);
+        }
         recordLocalUpdate(id, data);
       } else {
         await addProduct(data);
@@ -149,7 +149,9 @@ function ProductListContent() {
   const handleDeleteConfirm = async () => {
     if (!deletingProduct) return;
     try {
-      await deleteProduct(deletingProduct.id);
+      if (!isLocalId(deletingProduct.id)) {
+        await deleteProduct(deletingProduct.id);
+      }
     } catch {
       // Proceed with local deletion even if demo API fails
     } finally {

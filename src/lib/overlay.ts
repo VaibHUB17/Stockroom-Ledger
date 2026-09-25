@@ -117,9 +117,10 @@ export function applyOverlay(
   overlay: OverlayData,
   filters?: { q?: string; category?: string; page?: number }
 ): Product[] {
-  // 1. Filter out deleted products
+  // 1. Exclude deleted products and any products already tracked in created overlay
+  const createdIds = new Set(overlay.created.map((p) => p.id));
   const remaining = fetchedProducts.filter(
-    (product) => !overlay.deleted.includes(product.id)
+    (product) => !overlay.deleted.includes(product.id) && !createdIds.has(product.id)
   );
 
   // 2. Apply updates
@@ -130,6 +131,8 @@ export function applyOverlay(
 
   // 3. On page 1, prepend created items that match active filters
   const page = filters?.page || 1;
+  let combined: Product[] = patched;
+
   if (page === 1 && overlay.created.length > 0) {
     const matchingCreated = overlay.created.filter((p) => {
       if (overlay.deleted.includes(p.id)) return false;
@@ -149,10 +152,18 @@ export function applyOverlay(
       return true;
     });
 
-    return [...matchingCreated, ...patched];
+    combined = [...matchingCreated, ...patched];
   }
 
-  return patched;
+  // 4. Strictly deduplicate by ID to guarantee unique React keys
+  const seenIds = new Set<number>();
+  return combined.filter((product) => {
+    if (seenIds.has(product.id)) {
+      return false;
+    }
+    seenIds.add(product.id);
+    return true;
+  });
 }
 
 export function applyOverlayToSingle(

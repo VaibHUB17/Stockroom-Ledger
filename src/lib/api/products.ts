@@ -1,5 +1,11 @@
 import { http } from "../http";
-import { Product, ProductListResponse, SortField, SortOrder } from "../types";
+import { Product, ProductListResponse, SortField, SortOrder, AppError } from "../types";
+import { getOverlay } from "../overlay";
+
+export function isLocalId(id: number | string): boolean {
+  const numericId = typeof id === "string" ? parseInt(id, 10) : id;
+  return !isNaN(numericId) && numericId >= 10000;
+}
 
 export interface FetchProductsOptions {
   limit: number;
@@ -67,6 +73,22 @@ export async function getProductsByCategory(options: CategoryProductsOptions): P
 }
 
 export async function getProductById(id: number | string, signal?: AbortSignal): Promise<Product> {
+  const numericId = typeof id === "string" ? parseInt(id, 10) : id;
+
+  if (isLocalId(numericId)) {
+    const overlay = getOverlay();
+    const found = overlay.created.find((p) => p.id === numericId);
+    if (found && !overlay.deleted.includes(numericId)) {
+      const patch = overlay.updated[numericId];
+      return patch ? { ...found, ...patch, isLocal: true } : found;
+    }
+    const notFoundError: AppError = {
+      message: `Product with ID ${id} not found.`,
+      status: 404,
+    };
+    throw notFoundError;
+  }
+
   const response = await http.get<Product>(`/products/${id}`, { signal });
   return response.data;
 }
@@ -77,11 +99,31 @@ export async function addProduct(payload: ProductInput): Promise<Product> {
 }
 
 export async function updateProduct(id: number, payload: Partial<ProductInput>): Promise<Product> {
+  if (isLocalId(id)) {
+    return {
+      id,
+      title: payload.title || "",
+      description: payload.description || "",
+      category: payload.category || "",
+      price: payload.price ?? 0,
+      stock: payload.stock ?? 0,
+      brand: payload.brand,
+      thumbnail: payload.thumbnail || "",
+      images: payload.thumbnail ? [payload.thumbnail] : [],
+      rating: 5,
+      isLocal: true,
+    };
+  }
+
   const response = await http.put<Product>(`/products/${id}`, payload);
   return response.data;
 }
 
 export async function deleteProduct(id: number): Promise<{ id: number; isDeleted: boolean }> {
+  if (isLocalId(id)) {
+    return { id, isDeleted: true };
+  }
+
   const response = await http.delete<{ id: number; isDeleted: boolean }>(`/products/${id}`);
   return response.data;
 }

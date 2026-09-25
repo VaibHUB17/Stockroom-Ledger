@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Product } from "../lib/types";
 import { IconStar, IconEdit, IconTrash } from "./icons";
 import { StockIndicator } from "./StockIndicator";
+import { ProductImage } from "./ProductImage";
 
 interface ProductTableProps {
   products: Product[];
@@ -46,20 +46,13 @@ export function ProductTable({
                 {/* Thumbnail */}
                 <td className="py-2.5 px-4">
                   <Link href={detailHref} className="block w-12 h-12 relative rounded-md overflow-hidden bg-[var(--bg)] border border-[var(--hairline)]">
-                    {product.thumbnail ? (
-                      <Image
-                        src={product.thumbnail}
-                        alt=""
-                        fill
-                        unoptimized
-                        sizes="48px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[var(--muted-ink)] text-xs font-mono">
-                        N/A
-                      </div>
-                    )}
+                    <ProductImage
+                      src={product.thumbnail}
+                      alt={product.title}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
                   </Link>
                 </td>
 

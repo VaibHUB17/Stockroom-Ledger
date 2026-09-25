@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Navbar } from "../../../components/Navbar";
 import { IconArrowLeft, IconStar } from "../../../components/icons";
 import { StockIndicator } from "../../../components/StockIndicator";
+import { ProductImage } from "../../../components/ProductImage";
 import { getProductById } from "../../../lib/api/products";
 import { getToken } from "../../../lib/auth-storage";
 import { getOverlay, applyOverlayToSingle } from "../../../lib/overlay";
@@ -90,8 +90,18 @@ export default function ProductDetailPage({ params }: PageProps) {
       const localCreated = overlay.created.find((p) => p.id === numericId);
       if (localCreated) {
         if (isMounted) {
-          setProduct(localCreated);
-          setActiveImage(localCreated.images[0] || localCreated.thumbnail || "");
+          const patched = applyOverlayToSingle(localCreated, overlay) || localCreated;
+          setProduct(patched);
+          setActiveImage(patched.images[0] || patched.thumbnail || "");
+          setLoading(false);
+        }
+        return;
+      }
+
+      // If it's a local ID and not in local overlay, it does not exist remotely
+      if (numericId >= 10000) {
+        if (isMounted) {
+          setNotFoundState(true);
           setLoading(false);
         }
         return;
@@ -223,21 +233,16 @@ export default function ProductDetailPage({ params }: PageProps) {
               {/* Left Column: Image Gallery */}
               <div className="space-y-3">
                 <div className="w-full aspect-square relative rounded border border-[var(--hairline)] bg-[var(--bg)] overflow-hidden">
-                  {activeImage ? (
-                    <Image
-                      src={activeImage}
-                      alt={product.title}
-                      fill
-                      priority
-                      unoptimized
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                      className="object-contain p-4"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[var(--muted-ink)] font-mono text-sm">
-                      No image available
-                    </div>
-                  )}
+                  <ProductImage
+                    src={activeImage}
+                    alt={product.title}
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-contain p-4"
+                    fallbackText="No image available"
+                    fallbackClassName="text-sm"
+                  />
                 </div>
 
                 {/* Thumbnails list */}
@@ -254,11 +259,10 @@ export default function ProductDetailPage({ params }: PageProps) {
                             : "border-[var(--hairline)] opacity-70 hover:opacity-100"
                         }`}
                       >
-                        <Image
+                        <ProductImage
                           src={img}
                           alt=""
                           fill
-                          unoptimized
                           sizes="64px"
                           className="object-cover"
                         />
